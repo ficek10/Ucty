@@ -1,0 +1,2380 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vyúčtování — CSS Tloskov</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+  :root{
+    --bg:#f1f4f9;
+    --panel:#ffffff;
+    --paper:#fafcff;
+    --ink:#0f172a;
+    --line:#e2e8f0;
+    --line-soft:#f1f5f9;
+    --accent:#f97316;
+    --accent-dark:#ea580c;
+    --accent-light:#fde8d0;
+    --accent-glow:rgba(249,115,22,0.25);
+    --warn:#ef4444;
+    --warn-bg:#fef2f2;
+    --success:#22c55e;
+    --muted:#64748b;
+    --shadow-sm:0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md:0 4px 16px rgba(0,0,0,0.08);
+    --shadow-lg:0 8px 32px rgba(0,0,0,0.12);
+    --radius:12px;
+    --radius-sm:8px;
+    --sidebar-w:240px;
+    --right-w:280px;
+    --transition:all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size:13px;
+    line-height:1.6;
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-track{background:#f1f5f9;border-radius:10px;}
+  ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px;}
+  ::-webkit-scrollbar-thumb:hover{background:#94a3b8;}
+
+  /* ===== TOP BAR ===== */
+  .topbar{
+    background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color:#fff;
+    padding:12px 24px;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+    flex-shrink:0;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    position:sticky;
+    top:0;
+    z-index:100;
+  }
+  .topbar-brand{display:flex;align-items:center;gap:12px;}
+  .topbar-brand .logo{
+    width:38px;
+    height:38px;
+    background:transparent;  /* pozadí již není oranžové, obrázek má vlastní */
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    flex-shrink:0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15); /* lehký stín pro oddělení od tmavého pozadí */
+  }
+  .topbar-brand .logo img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    display:block;
+    border-radius:10px;
+  }
+  .topbar h1{
+    font-size:16px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    margin:0;
+  }
+  .topbar .sub{
+    font-size:11px;
+    opacity:0.6;
+    font-weight:400;
+    margin:0;
+  }
+  .topbar-actions{
+    margin-left:auto;
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    align-items:center;
+  }
+  .topbar-actions button{
+    background:rgba(255,255,255,0.07);
+    backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,0.08);
+    color:#fff;
+    padding:6px 14px;
+    border-radius:var(--radius-sm);
+    cursor:pointer;
+    font-size:12px;
+    font-family:inherit;
+    font-weight:500;
+    transition:var(--transition);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .topbar-actions button i{font-size:13px;opacity:0.7;}
+  .topbar-actions button:hover{
+    background:rgba(255,255,255,0.15);
+    transform:translateY(-1px);
+    box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  }
+  .topbar-actions button:active{transform:scale(0.97);}
+  .topbar .save-status{
+    font-size:11px;
+    opacity:0.7;
+    font-style:italic;
+    min-width:130px;
+    padding:4px 12px;
+    background:rgba(255,255,255,0.05);
+    border-radius:20px;
+    text-align:center;
+  }
+
+  /* ===== BANNER ===== */
+  #restoreBanner{
+    margin:12px 20px 0;
+    padding:12px 20px;
+    background:#fef9e7;
+    border:1px solid #f59e0b;
+    border-radius:var(--radius);
+    color:#78350f;
+    font-size:13px;
+    display:none;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  #restoreBanner button{
+    font-family:inherit;
+    font-size:12px;
+    padding:5px 14px;
+    border-radius:var(--radius-sm);
+    border:1px solid #d97706;
+    background:#fff;
+    color:#78350f;
+    cursor:pointer;
+    font-weight:500;
+    transition:var(--transition);
+  }
+  #restoreBanner button:hover{background:#fef3c7;}
+
+  /* ===== WORKSPACE ===== */
+  .workspace{
+    flex:1;
+    display:grid;
+    grid-template-columns:var(--sidebar-w) 1fr var(--right-w);
+    min-height:0;
+    overflow:hidden;
+    gap:0;
+  }
+
+  /* ===== PANELS ===== */
+  .panel{
+    background:var(--panel);
+    border-right:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    overflow:hidden;
+  }
+  .panel:last-child{border-right:none;border-left:1px solid var(--line);}
+  .panel-head{
+    padding:16px 18px 10px;
+    font-size:10px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--muted);
+    border-bottom:1px solid var(--line-soft);
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .panel-head i{font-size:12px;opacity:0.5;}
+  .panel-body{
+    flex:1;
+    overflow-y:auto;
+    padding:10px 12px;
+  }
+  .panel-foot{
+    padding:10px 12px;
+    border-top:1px solid var(--line-soft);
+    flex-shrink:0;
+    background:#fafcfc;
+  }
+
+  /* ===== LEFT: CLIENTS ===== */
+  .client-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border-radius:var(--radius-sm);
+    cursor:pointer;
+    margin-bottom:3px;
+    border:1px solid transparent;
+    transition:var(--transition);
+  }
+  .client-item:hover{
+    background:#f8fafc;
+    transform:translateX(3px);
+  }
+  .client-item.active{
+    background:var(--accent-light);
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-glow);
+  }
+  .client-item .avatar{
+    width:32px;height:32px;
+    border-radius:50%;
+    background:var(--accent);
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;
+    flex-shrink:0;
+  }
+  .client-item .name{
+    flex:1;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:13px;
+    font-weight:500;
+  }
+  .add-client-row{
+    display:flex;
+    gap:6px;
+  }
+  .add-client-row input{
+    flex:1;
+    padding:8px 12px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-sm);
+    font-size:13px;
+    font-family:inherit;
+    min-width:0;
+    transition:var(--transition);
+    background:#fff;
+  }
+  .add-client-row input:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-glow);
+  }
+  .add-client-row button, .panel-foot button{
+    padding:8px 14px;
+    border:1px solid var(--accent);
+    background:var(--accent);
+    color:#fff;
+    border-radius:var(--radius-sm);
+    cursor:pointer;
+    font-size:12px;
+    font-family:inherit;
+    font-weight:500;
+    transition:var(--transition);
+    white-space:nowrap;
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  .add-client-row button:hover{background:var(--accent-dark);transform:translateY(-1px);}
+  .panel-foot button.secondary{
+    background:transparent;
+    color:var(--accent-dark);
+    border-color:var(--line);
+  }
+  .panel-foot button.secondary:hover{background:#f8fafc;}
+  .panel-foot button.danger{
+    background:transparent;
+    color:var(--warn);
+    border-color:var(--warn);
+  }
+  .panel-foot button.danger:hover{background:var(--warn-bg);}
+  .panel-foot button:disabled{opacity:0.4;cursor:not-allowed;transform:none !important;}
+
+  /* ===== CENTER ===== */
+  .center{
+    background:var(--bg);
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    overflow:hidden;
+  }
+  .center-toolbar{
+    background:var(--panel);
+    border-bottom:1px solid var(--line);
+    padding:8px 16px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    align-items:center;
+    flex-shrink:0;
+  }
+  .center-toolbar select, .center-toolbar button{
+    font-family:inherit;
+    font-size:12px;
+    padding:6px 12px;
+    border-radius:var(--radius-sm);
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    cursor:pointer;
+    transition:var(--transition);
+    display:flex;
+    align-items:center;
+    gap:5px;
+  }
+  .center-toolbar select:hover, .center-toolbar button:hover{
+    border-color:var(--accent);
+  }
+  .center-toolbar select:focus{outline:none;border-color:var(--accent);}
+  .center-toolbar button.primary{
+    background:var(--accent);
+    color:#fff;
+    border-color:var(--accent);
+  }
+  .center-toolbar button.primary:hover{background:var(--accent-dark);}
+  .center-toolbar button.danger{
+    color:var(--warn);
+    border-color:var(--warn);
+    background:transparent;
+  }
+  .center-toolbar button.danger:hover{background:var(--warn-bg);}
+  .center-toolbar button:disabled{opacity:0.4;cursor:not-allowed;}
+
+  .center-scroll{
+    flex:1;
+    overflow-y:auto;
+    padding:20px;
+  }
+  .sheet{
+    max-width:760px;
+    margin:0 auto;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:28px 32px 24px;
+    box-shadow:var(--shadow-md);
+  }
+
+  .header-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px 24px;
+    margin-bottom:20px;
+    align-items:end;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .field label{
+    font-size:10px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  .field input, .field select{
+    border:1px solid var(--line);
+    border-radius:var(--radius-sm);
+    padding:8px 12px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--ink);
+    background:#fff;
+    transition:var(--transition);
+    width:100%;
+  }
+  .field input:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-glow);
+  }
+  .field input:disabled{opacity:0.6;background:#f8fafc;}
+
+  /* ===== TABLE ===== */
+  table.data{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0 4px;
+    font-size:13px;
+    margin-bottom:8px;
+  }
+  table.data thead th{
+    font-size:10px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--muted);
+    text-align:left;
+    padding:8px 10px;
+    background:#f8fafc;
+    border-radius:6px 6px 0 0;
+  }
+  table.data thead th.num{text-align:right;}
+  table.data tbody tr{
+    background:#fff;
+    border-radius:var(--radius-sm);
+    box-shadow:var(--shadow-sm);
+    transition:var(--transition);
+  }
+  table.data tbody tr:hover{
+    box-shadow:var(--shadow-md);
+  }
+  table.data td{
+    padding:6px 10px;
+    border-bottom:none;
+    vertical-align:middle;
+  }
+  table.data td.ord{
+    color:var(--muted);
+    font-size:12px;
+    width:30px;
+    font-weight:500;
+  }
+  table.data td input{
+    width:100%;
+    border:1px solid transparent;
+    background:transparent;
+    font-family:inherit;
+    font-size:13px;
+    color:var(--ink);
+    padding:6px 4px;
+    border-radius:4px;
+    transition:var(--transition);
+  }
+  table.data td input:hover{border-color:var(--line);}
+  table.data td input:focus{
+    outline:none;
+    border-color:var(--accent);
+    background:#fff;
+    box-shadow:0 0 0 3px var(--accent-glow);
+  }
+  table.data td input:disabled{opacity:0.6;}
+  table.data td input.cena{
+    text-align:right;
+    font-weight:500;
+  }
+  .rowdel{
+    background:none;
+    border:none;
+    color:var(--muted);
+    cursor:pointer;
+    font-size:14px;
+    padding:4px 8px;
+    border-radius:4px;
+    transition:var(--transition);
+  }
+  .rowdel:hover{color:var(--warn);background:var(--warn-bg);}
+  .rowdel:disabled{opacity:0.3;cursor:not-allowed;}
+
+  .addrow{
+    margin:10px 0 8px;
+    background:none;
+    border:2px dashed var(--line);
+    color:var(--accent-dark);
+    width:100%;
+    padding:10px;
+    font-size:13px;
+    font-family:inherit;
+    cursor:pointer;
+    border-radius:var(--radius-sm);
+    transition:var(--transition);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+  }
+  .addrow:hover{
+    border-color:var(--accent);
+    background:var(--accent-light);
+  }
+  .addrow:disabled{opacity:0.4;cursor:not-allowed;}
+
+  /* ===== KAPESNÉ ===== */
+  .kapesne-gen{margin:12px 0 8px;}
+  .kapesne-toggle{
+    background:none;
+    border:none;
+    color:var(--accent-dark);
+    font-size:12px;
+    font-family:inherit;
+    cursor:pointer;
+    padding:6px 2px;
+    font-weight:500;
+    transition:var(--transition);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .kapesne-toggle:hover{color:var(--accent);}
+  .kapesne-form{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 16px;
+    align-items:end;
+    background:var(--accent-light);
+    border:1px solid #fcd3b0;
+    border-radius:var(--radius-sm);
+    padding:14px 18px;
+    margin-top:8px;
+  }
+  .kapesne-form .field{min-width:110px;flex:1;}
+  .kapesne-form .field input{
+    border:1px solid var(--line);
+    border-radius:var(--radius-sm);
+    padding:6px 10px;
+    font-family:inherit;
+    font-size:13px;
+    background:#fff;
+  }
+  .kapesne-form .field input:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-glow);
+  }
+  .kapesne-form button.primary{
+    background:var(--accent);
+    color:#fff;
+    border:1px solid var(--accent);
+    border-radius:var(--radius-sm);
+    padding:7px 16px;
+    font-size:12px;
+    font-family:inherit;
+    font-weight:500;
+    cursor:pointer;
+    transition:var(--transition);
+  }
+  .kapesne-form button.primary:hover{background:var(--accent-dark);}
+  .kapesne-form button:disabled{opacity:0.4;cursor:not-allowed;}
+
+  /* ===== SIGNATURE ===== */
+  .signature{
+    margin-top:28px;
+    font-size:13px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    padding-top:16px;
+    border-top:1px solid var(--line-soft);
+  }
+  .signature-input{
+    font-family:inherit;
+    font-size:13px;
+    border:none;
+    border-bottom:2px solid var(--line);
+    background:transparent;
+    padding:4px 2px;
+    min-width:160px;
+    transition:var(--transition);
+  }
+  .signature-input:focus{
+    outline:none;
+    border-bottom-color:var(--accent);
+  }
+  .date-line{color:var(--muted);font-size:12px;}
+
+  /* ===== BADGES ===== */
+  .locked-badge, .archive-badge{
+    color:#fff;
+    padding:4px 16px;
+    border-radius:20px;
+    font-weight:600;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    display:inline-block;
+  }
+  .locked-badge{background:var(--warn);}
+  .archive-badge{background:var(--accent);}
+  #lockedBadge{text-align:right;align-self:center;}
+
+  /* ===== RIGHT PANEL ===== */
+  .card{
+    background:#fff;
+    border:1px solid var(--line-soft);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin-bottom:12px;
+    box-shadow:var(--shadow-sm);
+    transition:var(--transition);
+  }
+  .card:hover{box-shadow:var(--shadow-md);}
+  .card h3{
+    margin:0 0 12px;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.07em;
+    color:var(--muted);
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .card h3 i{font-size:12px;}
+  .hist-item{
+    padding:8px 10px;
+    border-radius:var(--radius-sm);
+    cursor:pointer;
+    margin-bottom:3px;
+    border:1px solid transparent;
+    font-size:12px;
+    transition:var(--transition);
+  }
+  .hist-item:hover{background:#f8fafc;border-color:var(--line);}
+  .hist-item.active{
+    background:var(--accent-light);
+    border-color:var(--accent);
+  }
+  .hist-item .h-num{font-weight:600;}
+  .hist-item .h-meta{color:var(--muted);font-size:11px;margin-top:1px;}
+
+  .totals-row{
+    display:flex;
+    justify-content:space-between;
+    padding:6px 0;
+    font-size:13px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .totals-row:last-child{border-bottom:none;}
+  .totals-row.celkem{
+    border-top:2px solid var(--accent);
+    border-bottom:none;
+    margin-top:4px;
+    padding-top:10px;
+    font-weight:600;
+    font-size:14px;
+  }
+  .totals-row.zbyva{
+    font-size:16px;
+    font-weight:700;
+  }
+  .totals-row.zbyva.positive{color:var(--success);}
+  .totals-row.zbyva.negative{color:var(--warn);}
+  .totals-note{
+    font-size:11px;
+    font-weight:500;
+    margin-top:8px;
+    text-align:right;
+    padding:4px 8px;
+    background:var(--line-soft);
+    border-radius:4px;
+  }
+  .totals-note.warning-bg{background:var(--warn-bg);color:var(--warn);}
+
+  .stat-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .stat-box{
+    background:linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius:var(--radius-sm);
+    padding:12px 8px;
+    text-align:center;
+    border:1px solid var(--line-soft);
+  }
+  .stat-box .val{
+    font-size:20px;
+    font-weight:700;
+    color:var(--ink);
+    line-height:1.2;
+  }
+  .stat-box .lbl{
+    font-size:9px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--muted);
+    margin-top:3px;
+  }
+
+  /* ===== MODE BANNER ===== */
+  .mode-banner{
+    padding:12px 18px;
+    border-radius:var(--radius);
+    margin-bottom:14px;
+    font-size:13px;
+    display:none;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .mode-banner.archive{
+    display:none;
+    background:var(--accent-light);
+    border:1px solid var(--accent);
+    color:var(--accent-dark);
+  }
+  .mode-banner.restore{
+    display:none;
+    background:#fef9e7;
+    border:1px solid #f59e0b;
+    color:#78350f;
+  }
+  .mode-banner button{
+    font-family:inherit;
+    font-size:12px;
+    padding:4px 14px;
+    border-radius:var(--radius-sm);
+    border:1px solid var(--line);
+    background:#fff;
+    cursor:pointer;
+    transition:var(--transition);
+    font-weight:500;
+  }
+  .mode-banner button:hover{background:#f8fafc;}
+
+  .empty-state{
+    text-align:center;
+    color:var(--muted);
+    padding:60px 20px;
+    font-size:14px;
+  }
+  .empty-state i{font-size:48px;opacity:0.2;display:block;margin-bottom:16px;}
+
+  /* ===== TISK ===== */
+  .print-only{display:none;}
+  .print-table{
+    width:100%;
+    border-collapse:collapse;
+    font-family:Arial, sans-serif;
+    font-size:12px;
+    text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  .print-table th, .print-table td{
+    border:1px solid #000;
+    padding:2px 6px;
+    text-align:left;
+    height:20px;
+    line-height:20px;
+  }
+  .print-table td.num, .print-table th.num{text-align:right;}
+  .print-note{
+    font-family:Arial, sans-serif;
+    font-size:13px;
+    font-weight:bold;
+    text-transform:uppercase;
+    margin:2px 0 22px;
+  }
+  .print-sign{
+    font-family:Arial, sans-serif;
+    font-size:13px;
+    text-transform:uppercase;
+  }
+
+  @media print{
+    body{background:#fff;margin:0;padding:0;}
+    .topbar, .workspace > .panel, .center-toolbar, .mode-banner, #editArea, #restoreBanner { display:none !important; }
+    .workspace{display:block;}
+    .center{display:block;}
+    .center-scroll{padding:0;overflow:visible;}
+    .print-only{display:block !important;}
+  }
+
+  /* ===== RESPONSIVE ===== */
+  /* ===== MOBILE NAV ===== */
+  .mobile-nav-btns{display:none;}
+  .panel-close-btn{display:none;}
+  .mobile-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(15,23,42,0.45);
+    z-index:200;
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transition:opacity 0.25s ease, visibility 0.25s ease;
+  }
+  .mobile-backdrop.visible{
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+  }
+
+  @media (max-width:900px){
+    .workspace{grid-template-columns:1fr; position:relative;}
+    .panel{
+      display:flex !important;
+      position:fixed;
+      top:0;
+      bottom:0;
+      width:min(300px, 88vw);
+      max-width:100%;
+      z-index:210;
+      box-shadow:var(--shadow-lg);
+      border:none;
+      visibility:hidden;
+      pointer-events:none;
+    }
+    .panel#leftPanel{
+      left:0;
+      transform:translateX(-105%);
+      transition:transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.28s;
+    }
+    .panel#rightPanel{
+      right:0;
+      left:auto;
+      border-left:1px solid var(--line);
+      transform:translateX(105%);
+      transition:transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.28s;
+    }
+    .panel.mobile-show{
+      transform:translateX(0) !important;
+      visibility:visible;
+      pointer-events:auto;
+    }
+    .panel-close-btn{
+      display:flex;
+      margin-left:auto;
+      background:none;
+      border:none;
+      color:var(--muted);
+      cursor:pointer;
+      font-size:16px;
+      padding:4px 6px;
+      border-radius:6px;
+      align-items:center;
+      justify-content:center;
+    }
+    .panel-close-btn:hover{background:var(--line-soft);color:var(--ink);}
+    .mobile-nav-btns{
+      display:flex;
+      gap:4px;
+      align-items:center;
+      flex-shrink:0;
+    }
+    .mobile-nav-btns button{
+      background:rgba(255,255,255,0.1);
+      border:1px solid rgba(255,255,255,0.12);
+      color:#fff;
+      width:36px;
+      height:36px;
+      border-radius:var(--radius-sm);
+      cursor:pointer;
+      font-size:15px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:0;
+      transition:var(--transition);
+    }
+    .mobile-nav-btns button:hover,
+    .mobile-nav-btns button.active{
+      background:var(--accent);
+      border-color:var(--accent);
+    }
+    .header-grid{grid-template-columns:1fr;}
+    .topbar{padding:10px 12px; gap:8px;}
+    .topbar-actions{
+      width:100%;
+      margin-left:0;
+      order:3;
+      gap:4px;
+    }
+    .topbar-actions button{
+      padding:5px 8px;
+      font-size:11px;
+    }
+    .topbar-actions button span.btn-label{display:none;}
+    .topbar-actions .save-status{min-width:auto;font-size:10px;padding:2px 8px;}
+    .sheet{padding:16px;}
+    .center-toolbar{
+      overflow-x:auto;
+      flex-wrap:nowrap;
+      -webkit-overflow-scrolling:touch;
+      gap:4px;
+      padding:8px 10px;
+    }
+    .center-toolbar select,
+    .center-toolbar button{
+      flex-shrink:0;
+      white-space:nowrap;
+    }
+  }
+  @media (max-width:480px){
+    .center-scroll{padding:10px;}
+    .sheet{padding:12px;border-radius:8px;}
+    .topbar-brand .logo{width:32px;height:32px;}
+    .topbar h1{font-size:14px;}
+    .topbar .sub{font-size:10px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="mobile-nav-btns">
+    <button type="button" id="mobileLeftBtn" title="Klienti" aria-label="Klienti"><i class="fas fa-users"></i></button>
+  </div>
+  <div class="topbar-brand">
+    <!-- Logo Tloskov (světle modré pozadí) -->
+    <div class="logo">
+      <img src="https://tloskov.eu/cze/images/LogoMenu.png" alt="Tloskov">
+    </div>
+    <div>
+      <h1>Vyúčtování</h1>
+      <p class="sub">CSS Tloskov</p>
+    </div>
+  </div>
+  <div class="mobile-nav-btns" style="margin-left:auto;">
+    <button type="button" id="mobileRightBtn" title="Přehled" aria-label="Přehled"><i class="fas fa-chart-pie"></i></button>
+  </div>
+  <div class="topbar-actions">
+    <button type="button" id="openDbBtn"><i class="fas fa-folder-open"></i> <span class="btn-label">Otevřít</span></button>
+    <input type="file" id="fileInput" accept=".json" style="display:none;">
+    <button type="button" id="saveDbBtn"><i class="fas fa-save"></i> <span class="btn-label">Uložit</span></button>
+    <button type="button" id="saveAsDbBtn"><i class="fas fa-save"></i> <span class="btn-label">Uložit jako…</span></button>
+    <button type="button" id="backupBtn"><i class="fas fa-archive"></i> <span class="btn-label">Zálohovat</span></button>
+    <button type="button" id="printBtn"><i class="fas fa-print"></i> <span class="btn-label">Tisk</span></button>
+    <button type="button" id="printKapesneBtn"><i class="fas fa-coins"></i> <span class="btn-label">Tisk kapesného</span></button>
+    <button type="button" id="wordBtn"><i class="fas fa-file-word"></i> <span class="btn-label">Export Word</span></button>
+    <span class="save-status" id="saveStatus"></span>
+  </div>
+</div>
+<div class="mobile-backdrop" id="mobileBackdrop"></div>
+
+<div id="restoreBanner">
+  <i class="fas fa-exclamation-triangle"></i>
+  Nalezena automatická záloha z prohlížeče.
+  <button type="button" id="restoreLocalBtn">Obnovit zálohu</button>
+  <button type="button" id="dismissRestoreBtn">Zavřít</button>
+</div>
+
+<!-- WORKSPACE -->
+<div class="workspace">
+
+  <!-- LEFT -->
+  <aside class="panel" id="leftPanel">
+    <div class="panel-head"><i class="fas fa-users"></i> Klienti
+      <button type="button" class="panel-close-btn" id="closeLeftPanel" aria-label="Zavřít"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="panel-body" id="clientList"></div>
+    <div class="panel-foot">
+      <div class="add-client-row">
+        <input type="text" id="newClientName" placeholder="Nový klient…">
+        <button type="button" id="addClientBtn"><i class="fas fa-plus"></i></button>
+      </div>
+      <button type="button" class="danger" id="deleteClientBtn" style="width:100%;margin-top:8px;" disabled>
+        <i class="fas fa-trash"></i> Smazat klienta
+      </button>
+    </div>
+  </aside>
+
+  <!-- CENTER -->
+  <main class="center">
+    <div class="center-toolbar" id="recordToolbar" style="display:none;">
+      <select id="yearSelect" title="Filtr podle roku"><option value="">Všechny roky</option></select>
+      <select id="recordSelect"><option value="">— vyúčtování —</option></select>
+      <button type="button" class="primary" id="newRecordBtn"><i class="fas fa-plus"></i> Nové</button>
+      <button type="button" class="danger" id="deleteRecordBtn"><i class="fas fa-trash"></i> Smazat</button>
+      <button type="button" id="lockBtn" style="background:#ef4444;color:#fff;border-color:#ef4444;"><i class="fas fa-lock"></i> Uzavřít</button>
+      <button type="button" id="archiveYearBtn"><i class="fas fa-folder"></i> Archivovat rok…</button>
+      <button type="button" id="viewArchiveBtn"><i class="fas fa-folder-open"></i> Archiv</button>
+    </div>
+
+    <div class="center-scroll">
+      <div id="archiveBanner" class="mode-banner archive">
+        <i class="fas fa-info-circle"></i>
+        Prohlížíte archiv. Záznamy jsou jen pro čtení.
+        <button type="button" id="exitArchiveBtn">Zpět na aktivní</button>
+        <button type="button" id="restoreFromArchiveBtn">Vrátit do aktivních</button>
+      </div>
+
+      <div class="empty-state" id="emptyState">
+        <i class="fas fa-user-plus"></i>
+        Vyberte nebo přidejte klienta v levém panelu.
+      </div>
+
+      <div id="editArea" style="display:none;">
+        <div class="sheet">
+          <div class="header-grid">
+            <div class="field">
+              <label><i class="fas fa-user"></i> Jméno klienta</label>
+              <input type="text" id="jmeno">
+            </div>
+            <div class="field">
+              <label><i class="fas fa-hashtag"></i> Číslo výběru</label>
+              <input type="text" id="cisloVyberu" placeholder="např. 246/2026">
+            </div>
+            <div class="field">
+              <label><i class="fas fa-coins"></i> Částka výběru (Kč)</label>
+              <input type="text" inputmode="decimal" id="castka" placeholder="0">
+            </div>
+            <div id="lockedBadge"></div>
+          </div>
+
+          <table class="data">
+            <thead>
+              <tr>
+                <th>Pořadí</th>
+                <th>Datum</th>
+                <th>Název zboží</th>
+                <th class="num">Cena</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+          <button type="button" class="addrow" id="addRowBtn">
+            <i class="fas fa-plus-circle"></i> Přidat položku
+          </button>
+
+          <div class="kapesne-gen">
+            <button type="button" class="kapesne-toggle" id="kapesneToggleBtn">
+              <i class="fas fa-calendar-week"></i> + Vygenerovat týdenní kapesné
+            </button>
+            <div class="kapesne-form" id="kapesneForm" style="display:none;">
+              <div class="field">
+                <label>Částka za týden (Kč)</label>
+                <input type="text" inputmode="decimal" id="genCastka" placeholder="0">
+              </div>
+              <div class="field">
+                <label>Od</label>
+                <input type="date" id="genOd">
+              </div>
+              <div class="field">
+                <label>Do</label>
+                <input type="date" id="genDo">
+              </div>
+              <button type="button" class="primary" id="genRunBtn">
+                <i class="fas fa-play"></i> Vygenerovat řádky
+              </button>
+            </div>
+          </div>
+
+          <div class="signature">
+            <div>
+              <i class="fas fa-pen" style="color:var(--muted);font-size:12px;margin-right:4px;"></i>
+              Vypracoval: <input type="text" id="vypracoval" class="signature-input" placeholder="Jméno pracovníka">
+            </div>
+            <div class="date-line" id="printDate"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="print-only" id="printOnly"></div>
+    </div>
+  </main>
+
+  <!-- RIGHT -->
+  <aside class="panel" id="rightPanel">
+    <div class="panel-head"><i class="fas fa-chart-pie"></i> Přehled
+      <button type="button" class="panel-close-btn" id="closeRightPanel" aria-label="Zavřít"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="panel-body">
+      <div class="card">
+        <h3><i class="fas fa-history"></i> Historie</h3>
+        <div id="historyList"><div style="color:var(--muted);font-size:12px;">—</div></div>
+      </div>
+      <div class="card">
+        <h3><i class="fas fa-calculator"></i> Součty</h3>
+        <div class="totals-row celkem"><span>Celkem</span><span id="celkemOut">0 Kč</span></div>
+        <div class="totals-row zbyva" id="zbyvaRow"><span>Zbývá</span><span id="zbyvaOut">0 Kč</span></div>
+        <div class="totals-note" id="totalsNote"></div>
+      </div>
+      <div class="card">
+        <h3><i class="fas fa-chart-bar"></i> Statistiky</h3>
+        <div class="stat-grid" id="statsGrid">
+          <div class="stat-box"><div class="val" id="statRecords">0</div><div class="lbl">Vyúčtování</div></div>
+          <div class="stat-box"><div class="val" id="statItems">0</div><div class="lbl">Položky</div></div>
+          <div class="stat-box"><div class="val" id="statSpent">0</div><div class="lbl">Útrata Kč</div></div>
+          <div class="stat-box"><div class="val" id="statArchived">0</div><div class="lbl">V archivu</div></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+(function(){
+  let db = { clients: [] };
+  let currentClientId = null;
+  let currentRecordId = null;
+  let idCounter = 1;
+  let fileHandle = null;
+  let hasUnsavedChanges = false;
+  let viewingArchive = false;
+  let archiveYearFilter = '';
+  let yearFilter = '';
+  let autoBackupTimer = null;
+  const LS_KEY = 'vyuctovani_tloskov_autobackup';
+  const LS_TS_KEY = 'vyuctovani_tloskov_autobackup_ts';
+
+  const el = (id) => document.getElementById(id);
+
+  function nextId(prefix){ return prefix + (idCounter++); }
+
+  function syncIdCounter(loadedDb){
+    let max = 0;
+    const check = (id) => {
+      if(!id) return;
+      const m = String(id).match(/(\d+)$/);
+      if(m) max = Math.max(max, parseInt(m[1], 10));
+    };
+    const walkRecords = (recs) => {
+      (recs || []).forEach(r => {
+        check(r.id);
+        (r.items || []).forEach(it => check(it.id));
+      });
+    };
+    (loadedDb.clients || []).forEach(c => {
+      check(c.id);
+      walkRecords(c.records);
+      if(c.archive){
+        Object.keys(c.archive).forEach(y => walkRecords(c.archive[y]));
+      }
+    });
+    idCounter = Math.max(idCounter, max + 1);
+  }
+
+  function escapeHtml(str){
+    return String(str == null ? '' : str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+  }
+
+  function parseNum(v){
+    if(v === '' || v === null || v === undefined) return 0;
+    const n = parseFloat(String(v).replace(',', '.'));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function getClient(id){ return db.clients.find(c => c.id === id) || null; }
+  function getCurrentClient(){ return getClient(currentClientId); }
+
+  function getActiveRecordList(client){
+    if(!client) return [];
+    if(viewingArchive){
+      if(!client.archive) return [];
+      if(archiveYearFilter) return client.archive[archiveYearFilter] || [];
+      return Object.keys(client.archive).sort().reverse()
+        .flatMap(y => client.archive[y] || []);
+    }
+    return client.records || [];
+  }
+
+  function getCurrentRecord(){
+    const c = getCurrentClient();
+    if(!c) return null;
+    return getActiveRecordList(c).find(r => r.id === currentRecordId) || null;
+  }
+
+  function newItem(datum, nazev, cena){
+    return { id: nextId('i'), datum: datum || '', nazev: nazev || '', cena: (cena===undefined||cena===null) ? '' : cena };
+  }
+
+  function newRecordObj(){
+    return {
+      id: nextId('r'),
+      cisloVyberu: '',
+      castka: '',
+      vypracoval: '',
+      items: [newItem('', 'KAPESNÉ', '')],
+      locked: false,
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  function sortItems(items){
+    // Položky bez data (typicky KAPESNÉ) zůstávají vždy první.
+    items.sort((a,b) => {
+      if(!a.datum && !b.datum) return 0;
+      if(!a.datum) return -1;
+      if(!b.datum) return 1;
+      return a.datum < b.datum ? -1 : (a.datum > b.datum ? 1 : 0);
+    });
+  }
+
+  function formatKc(n){
+    return Math.round(n).toLocaleString('cs-CZ') + ' Kč';
+  }
+
+  function formatDatePrint(iso){
+    if(!iso) return '';
+    const [y,m,d] = iso.split('-');
+    return d + '.' + m + '.' + y;
+  }
+
+  function recordYear(rec){
+    if(!rec) return '';
+    if(rec.createdAt){
+      const y = String(rec.createdAt).slice(0, 4);
+      if(/^20\d{2}$/.test(y)) return y;
+    }
+    const m = String(rec.cisloVyberu || '').match(/(20\d{2})/);
+    if(m) return m[1];
+    let maxY = '';
+    (rec.items || []).forEach(it => {
+      if(it.datum && it.datum.length >= 4){
+        const y = it.datum.slice(0,4);
+        if(y > maxY) maxY = y;
+      }
+    });
+    if(maxY) return maxY;
+    return String(new Date().getFullYear());
+  }
+
+  function ensureArchive(client){
+    if(!client.archive) client.archive = {};
+    return client.archive;
+  }
+
+  function initials(name){
+    const p = String(name||'').trim().split(/\s+/).filter(Boolean);
+    if(!p.length) return '?';
+    if(p.length === 1) return p[0].slice(0,2).toUpperCase();
+    return (p[0][0] + p[p.length-1][0]).toUpperCase();
+  }
+
+  // ---------- Auto-záloha ----------
+  function scheduleAutoBackup(){
+    if(autoBackupTimer) clearTimeout(autoBackupTimer);
+    autoBackupTimer = setTimeout(doAutoBackup, 1500);
+  }
+  function doAutoBackup(){
+    try{
+      localStorage.setItem(LS_KEY, JSON.stringify({ savedAt: new Date().toISOString(), db }));
+      localStorage.setItem(LS_TS_KEY, new Date().toISOString());
+    }catch(e){}
+  }
+  function checkLocalBackupOnStart(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      const ts = localStorage.getItem(LS_TS_KEY);
+      if(!raw || !ts) return;
+      const parsed = JSON.parse(raw);
+      if(!parsed || !parsed.db) return;
+      if(db.clients && db.clients.length > 0) return;
+      const when = new Date(ts).toLocaleString('cs-CZ');
+      el('restoreBanner').style.display = 'flex';
+      el('restoreLocalBtn').textContent = 'Obnovit zálohu (' + when + ')';
+    }catch(e){}
+  }
+  function restoreFromLocal(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      if(!raw) return;
+      const parsed = JSON.parse(raw);
+      if(!parsed || !parsed.db) return;
+      processLoadedData(parsed.db, 'auto-záloha z prohlížeče');
+      el('restoreBanner').style.display = 'none';
+      markUnsaved();
+      el('saveStatus').textContent = 'Obnoveno z auto-zálohy – uložte soubor';
+    }catch(e){ alert('Zálohu se nepodařilo obnovit.'); }
+  }
+  function downloadBackup(){
+    const stamp = new Date().toISOString().slice(0,19).replace(/[T:]/g,'-');
+    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'vyuctovani_zaloha_' + stamp + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    el('saveStatus').textContent = 'Záloha stažena';
+  }
+  function markUnsaved(){
+    hasUnsavedChanges = true;
+    el('saveStatus').textContent = 'Neuložené změny';
+    scheduleAutoBackup();
+  }
+
+  // ---------- LEFT: client list ----------
+  function renderClientList(){
+    const box = el('clientList');
+    box.innerHTML = '';
+    if(!db.clients.length){
+      box.innerHTML = '<div style="color:var(--muted);padding:16px 8px;font-size:13px;text-align:center;"><i class="fas fa-users" style="display:block;font-size:32px;opacity:0.2;margin-bottom:8px;"></i>Zatím žádní klienti.</div>';
+      return;
+    }
+    const sorted = [...db.clients].sort((a,b) => (a.jmeno||'').localeCompare(b.jmeno||'', 'cs'));
+    sorted.forEach(c => {
+      const div = document.createElement('div');
+      div.className = 'client-item' + (c.id === currentClientId ? ' active' : '');
+      div.innerHTML = '<div class="avatar">' + escapeHtml(initials(c.jmeno)) + '</div><div class="name">' + escapeHtml(c.jmeno || '(bez jména)') + '</div>';
+      div.onclick = () => selectClient(c.id);
+      box.appendChild(div);
+    });
+  }
+
+  // ---------- YEAR / RECORD SELECTS + HISTORY ----------
+  function collectYears(client){
+    const years = new Set();
+    if(!client) return [];
+    (client.records || []).forEach(r => { const y = recordYear(r); if(y) years.add(y); });
+    if(client.archive) Object.keys(client.archive).forEach(y => years.add(y));
+    return Array.from(years).sort().reverse();
+  }
+
+  function populateYearSelect(){
+    const client = getCurrentClient();
+    const sel = el('yearSelect');
+    sel.innerHTML = '';
+    const optAll = document.createElement('option');
+    optAll.value = '';
+    optAll.textContent = viewingArchive ? 'Celý archiv' : 'Všechny roky';
+    sel.appendChild(optAll);
+    if(viewingArchive && client && client.archive){
+      Object.keys(client.archive).sort().reverse().forEach(y => {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = 'Archiv ' + y + ' (' + (client.archive[y]||[]).length + ')';
+        if(y === archiveYearFilter) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    } else {
+      collectYears(client).forEach(y => {
+        if(!(client.records || []).some(r => recordYear(r) === y)) return;
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        if(y === yearFilter) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    }
+  }
+
+  function filteredRecordList(client){
+    let list = getActiveRecordList(client);
+    if(!viewingArchive && yearFilter){
+      list = list.filter(r => recordYear(r) === yearFilter);
+    }
+    // Řadí se podle pořadí, v jakém byla vyúčtování vytvořena (nejnovější nahoře)
+    return [...list].sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+  }
+
+  function populateRecordSelect(){
+    const client = getCurrentClient();
+    const sel = el('recordSelect');
+    sel.innerHTML = '';
+    if(!client){
+      el('recordToolbar').style.display = 'none';
+      renderHistory([]);
+      return;
+    }
+    el('recordToolbar').style.display = 'flex';
+    const sorted = filteredRecordList(client);
+    sorted.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.id;
+      const y = recordYear(r);
+      opt.textContent = (r.cisloVyberu || '(bez čísla)') + (y ? ' [' + y + ']' : '');
+      if(r.id === currentRecordId) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    if(!sorted.length){
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = viewingArchive ? '— prázdný archiv —' : '— žádné vyúčtování —';
+      sel.appendChild(opt);
+    }
+    populateYearSelect();
+    renderHistory(sorted);
+  }
+
+  function renderHistory(list){
+    const box = el('historyList');
+    if(!list || !list.length){
+      box.innerHTML = '<div style="color:var(--muted);font-size:12px;">Žádná vyúčtování</div>';
+      return;
+    }
+    box.innerHTML = '';
+    list.forEach(r => {
+      const div = document.createElement('div');
+      div.className = 'hist-item' + (r.id === currentRecordId ? ' active' : '');
+      const y = recordYear(r);
+      const spent = (r.items || []).reduce((s, it) => s + parseNum(it.cena), 0);
+      div.innerHTML = '<div class="h-num">' + escapeHtml(r.cisloVyberu || '(bez čísla)') +
+        (r.locked ? ' 🔒' : '') + '</div><div class="h-meta">' +
+        escapeHtml(y || '—') + ' · ' + escapeHtml(formatKc(spent)) + '</div>';
+      div.onclick = () => { currentRecordId = r.id; populateRecordSelect(); render(); };
+      box.appendChild(div);
+    });
+  }
+
+  function renderStats(){
+    const client = getCurrentClient();
+    if(!client){
+      el('statRecords').textContent = '0';
+      el('statItems').textContent = '0';
+      el('statSpent').textContent = '0';
+      el('statArchived').textContent = '0';
+      return;
+    }
+    const active = client.records || [];
+    let archived = 0;
+    if(client.archive){
+      Object.keys(client.archive).forEach(y => { archived += (client.archive[y] || []).length; });
+    }
+    const list = viewingArchive ? getActiveRecordList(client) : active;
+    let items = 0, spent = 0;
+    list.forEach(r => {
+      (r.items || []).forEach(it => {
+        items++;
+        spent += parseNum(it.cena);
+      });
+    });
+    el('statRecords').textContent = String(list.length);
+    el('statItems').textContent = String(items);
+    el('statSpent').textContent = Math.round(spent).toLocaleString('cs-CZ');
+    el('statArchived').textContent = String(archived);
+  }
+
+  // ---------- SELECT / CRUD ----------
+  function selectClient(id){
+    currentClientId = id || null;
+    viewingArchive = false;
+    archiveYearFilter = '';
+    yearFilter = '';
+    const client = getCurrentClient();
+    if(client && client.records && client.records.length){
+      currentRecordId = client.records[client.records.length - 1].id;
+    } else if(client) {
+      const rec = newRecordObj();
+      client.records.push(rec);
+      currentRecordId = rec.id;
+    } else {
+      currentRecordId = null;
+    }
+    renderClientList();
+    populateRecordSelect();
+    updateVisibility();
+    render();
+  }
+
+  function addClient(){
+    if(viewingArchive) return;
+    const name = el('newClientName').value.trim();
+    if(!name) return;
+    const rec = newRecordObj();
+    const client = { id: nextId('c'), jmeno: name, records: [rec], archive: {} };
+    db.clients.push(client);
+    el('newClientName').value = '';
+    markUnsaved();
+    selectClient(client.id);
+  }
+
+  function deleteClient(){
+    const client = getCurrentClient();
+    if(!client) return;
+    if(!confirm('Opravdu smazat klienta „' + client.jmeno + '" a všechna jeho vyúčtování (včetně archivu)? Nelze vrátit zpět.')) return;
+    doAutoBackup();
+    db.clients = db.clients.filter(c => c.id !== client.id);
+    markUnsaved();
+    currentClientId = null;
+    currentRecordId = null;
+    viewingArchive = false;
+    renderClientList();
+    populateRecordSelect();
+    updateVisibility();
+    render();
+  }
+
+  function selectRecord(id){
+    // prázdná volba = nic nevybírat (nevytvářet automaticky nové vyúčtování)
+    if(!id){
+      currentRecordId = null;
+      populateRecordSelect();
+      render();
+      return;
+    }
+    currentRecordId = id;
+    populateRecordSelect();
+    render();
+  }
+
+  function newRecord(){
+    if(viewingArchive){
+      alert('V archivu nelze vytvářet nová vyúčtování. Přepněte se zpět na aktivní záznamy.');
+      return;
+    }
+    const client = getCurrentClient();
+    if(!client) return;
+    const rec = newRecordObj();
+    client.records.push(rec);
+    currentRecordId = rec.id;
+    markUnsaved();
+    populateRecordSelect();
+    render();
+  }
+
+  // Vrátí VŠECHNA vyúčtování klienta (aktivní i archivovaná), seřazená podle
+  // data vzniku — archivace roku „nepřetne“ řetěz převáděného zůstatku.
+  function getAllRecordsSorted(client){
+    if(!client) return [];
+    const all = [...(client.records || [])];
+    if(client.archive){
+      Object.keys(client.archive).forEach(y => {
+        (client.archive[y] || []).forEach(r => all.push(r));
+      });
+    }
+    return all.sort((a,b) => (a.createdAt||'').localeCompare(b.createdAt||''));
+  }
+
+  function getPreviousBalance(client, currentRecordId){
+    if(!client) return 0;
+    const all = getAllRecordsSorted(client);
+    if(all.length < 2) return 0;
+    const idx = all.findIndex(r => r.id === currentRecordId);
+    if(idx <= 0) return 0;
+    let balance = 0;
+    for(let i = 0; i < idx; i++){
+      const celkem = all[i].items.reduce((sum, it) => sum + parseNum(it.cena), 0);
+      const castka = parseNum(all[i].castka);
+      balance += castka - celkem;
+    }
+    return balance;
+  }
+
+  function deleteRecord(){
+    if(viewingArchive){
+      alert('Archivované vyúčtování smažte až po vrácení do aktivních.');
+      return;
+    }
+    const client = getCurrentClient();
+    const record = getCurrentRecord();
+    if(!client || !record) return;
+    if(record.locked === true){
+      alert('Uzavřené vyúčtování nelze smazat. Nejdřív ho odemkněte.');
+      return;
+    }
+    if(!confirm('Opravdu smazat toto vyúčtování (' + (record.cisloVyberu || 'bez čísla') + ')?')) return;
+    doAutoBackup();
+    client.records = client.records.filter(r => r.id !== record.id);
+    markUnsaved();
+    currentRecordId = client.records.length ? client.records[client.records.length-1].id : null;
+    if(!currentRecordId){
+      const rec = newRecordObj();
+      client.records.push(rec);
+      currentRecordId = rec.id;
+    }
+    populateRecordSelect();
+    render();
+  }
+
+  // ---------- ARCHIV ----------
+  function archiveYear(){
+    if(viewingArchive) return;
+    const client = getCurrentClient();
+    if(!client) return;
+    const years = collectYears(client).filter(y =>
+      (client.records || []).some(r => recordYear(r) === y)
+    );
+    if(!years.length){ alert('Žádné aktivní vyúčtování k archivaci.'); return; }
+    const suggestion = yearFilter || years[0];
+    const chosen = prompt('Zadejte rok k archivaci.\nDostupné roky s aktivními záznamy: ' + years.join(', '), suggestion);
+    if(!chosen) return;
+    const year = String(chosen).trim();
+    if(!/^\d{4}$/.test(year)){ alert('Zadejte platný rok (např. 2025).'); return; }
+    const toArchive = (client.records || []).filter(r => recordYear(r) === year);
+    if(!toArchive.length){ alert('Pro rok ' + year + ' nejsou žádná aktivní vyúčtování.'); return; }
+    if(!confirm('Archivovat ' + toArchive.length + ' vyúčtování za rok ' + year + '?\nZmizí z aktivního seznamu (zůstanou v archivu).')) return;
+    doAutoBackup();
+    const arch = ensureArchive(client);
+    if(!arch[year]) arch[year] = [];
+    arch[year] = arch[year].concat(toArchive);
+    client.records = client.records.filter(r => recordYear(r) !== year);
+    if(!client.records.find(r => r.id === currentRecordId)){
+      currentRecordId = client.records.length ? client.records[client.records.length-1].id : null;
+      if(!currentRecordId){
+        const rec = newRecordObj();
+        client.records.push(rec);
+        currentRecordId = rec.id;
+      }
+    }
+    markUnsaved();
+    populateRecordSelect();
+    render();
+    el('saveStatus').textContent = 'Rok ' + year + ' archivován (' + toArchive.length + ' záznamů)';
+  }
+
+  function enterArchiveMode(){
+    const client = getCurrentClient();
+    if(!client) return;
+    if(!client.archive || !Object.keys(client.archive).length){
+      alert('Archiv je prázdný. Nejdřív archivujte nějaký rok.');
+      return;
+    }
+    viewingArchive = true;
+    archiveYearFilter = '';
+    yearFilter = '';
+    const all = getActiveRecordList(client);
+    currentRecordId = all.length ? all[0].id : null;
+    populateRecordSelect();
+    updateVisibility();
+    render();
+  }
+
+  function exitArchiveMode(){
+    viewingArchive = false;
+    archiveYearFilter = '';
+    const client = getCurrentClient();
+    currentRecordId = (client && client.records.length) ? client.records[client.records.length-1].id : null;
+    populateRecordSelect();
+    updateVisibility();
+    render();
+  }
+
+  function restoreFromArchive(){
+    if(!viewingArchive) return;
+    const client = getCurrentClient();
+    const record = getCurrentRecord();
+    if(!client || !record) return;
+    const year = recordYear(record) || archiveYearFilter;
+    if(!year || !client.archive || !client.archive[year]){
+      alert('Nelze určit rok záznamu.');
+      return;
+    }
+    if(!confirm('Vrátit vyúčtování „' + (record.cisloVyberu || 'bez čísla') + '" zpět mezi aktivní?')) return;
+    doAutoBackup();
+    client.archive[year] = client.archive[year].filter(r => r.id !== record.id);
+    if(!client.archive[year].length) delete client.archive[year];
+    // Vložit na správné místo podle data vzniku
+    let insertAt = client.records.length;
+    for(let i = 0; i < client.records.length; i++){
+      if((client.records[i].createdAt || '') > (record.createdAt || '')){ insertAt = i; break; }
+    }
+    client.records.splice(insertAt, 0, record);
+    markUnsaved();
+    const still = getActiveRecordList(client);
+    currentRecordId = still.length ? still[0].id : null;
+    if(!still.length) exitArchiveMode();
+    else { populateRecordSelect(); render(); }
+    el('saveStatus').textContent = 'Záznam vrácen mezi aktivní';
+  }
+
+  function updateVisibility(){
+    const client = getCurrentClient();
+    el('emptyState').style.display = client ? 'none' : 'block';
+    el('editArea').style.display = client ? 'block' : 'none';
+    el('deleteClientBtn').disabled = !client || viewingArchive;
+    el('addClientBtn').disabled = viewingArchive;
+    el('newClientName').disabled = viewingArchive;
+    el('newRecordBtn').disabled = viewingArchive;
+    el('archiveYearBtn').disabled = viewingArchive || !client;
+    el('viewArchiveBtn').style.display = viewingArchive ? 'none' : '';
+    el('archiveBanner').style.display = viewingArchive ? 'flex' : 'none';
+  }
+
+  function isLocked(){
+    const record = getCurrentRecord();
+    return (record && record.locked === true) || viewingArchive;
+  }
+
+  function updateLockUI(){
+    const locked = isLocked();
+    const trulyLocked = getCurrentRecord() && getCurrentRecord().locked === true;
+    const lockBtn = el('lockBtn');
+    if(lockBtn){
+      if(viewingArchive){
+        lockBtn.style.display = 'none';
+      } else {
+        lockBtn.style.display = 'flex';
+        lockBtn.innerHTML = trulyLocked ? '<i class="fas fa-unlock"></i> Odemknout' : '<i class="fas fa-lock"></i> Uzavřít';
+        lockBtn.style.background = trulyLocked ? '#22c55e' : '#ef4444';
+        lockBtn.style.borderColor = trulyLocked ? '#22c55e' : '#ef4444';
+        lockBtn.style.color = '#fff';
+      }
+    }
+    document.querySelectorAll('#editArea input, #addRowBtn, .rowdel, #genRunBtn').forEach(node => {
+      if(node.id !== 'lockBtn') node.disabled = locked;
+    });
+    const delBtn = el('deleteRecordBtn');
+    if(delBtn) delBtn.disabled = locked;
+
+    const badge = el('lockedBadge');
+    if(badge){
+      if(viewingArchive){
+        badge.className = 'archive-badge';
+        badge.textContent = 'ARCHIV';
+        badge.style.display = 'inline-block';
+      } else if(trulyLocked){
+        badge.className = 'locked-badge';
+        badge.textContent = 'UZAVŘENO';
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+        badge.textContent = '';
+      }
+    }
+  }
+
+  function render(){
+    const client = getCurrentClient();
+    const record = getCurrentRecord();
+    if(!client || !record){
+      updateVisibility();
+      renderStats();
+      buildPrintView();
+      return;
+    }
+    el('jmeno').value = client.jmeno;
+    el('cisloVyberu').value = record.cisloVyberu;
+    el('castka').value = record.castka;
+    el('vypracoval').value = record.vypracoval || '';
+    renderRows();
+    renderTotals();
+    renderStats();
+    updateVisibility();
+    updateLockUI();
+  }
+
+  function renderRows(){
+    const record = getCurrentRecord();
+    const tbody = el('rows');
+    tbody.innerHTML = '';
+    if(!record) return;
+    record.items.forEach((item, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="ord">${idx+1}</td>
+        <td><input type="date" data-field="datum" data-id="${item.id}" value="${item.datum}"></td>
+        <td><input type="text" data-field="nazev" data-id="${item.id}" value="${escapeHtml(item.nazev)}" placeholder="Název zboží"></td>
+        <td class="num"><input type="text" inputmode="decimal" class="cena" data-field="cena" data-id="${item.id}" value="${escapeHtml(item.cena)}" placeholder="0"></td>
+        <td><button type="button" class="rowdel" data-del="${item.id}" title="Smazat řádek" aria-label="Smazat řádek"><i class="fas fa-times"></i></button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+    attachFieldListeners();
+  }
+
+  function renderTotals(){
+    const client = getCurrentClient();
+    const record = getCurrentRecord();
+    if(!record) return;
+    const celkem = record.items.reduce((sum, it) => sum + parseNum(it.cena), 0);
+    const castkaEntered = parseNum(record.castka);
+    const prevBalance = viewingArchive ? 0 : getPreviousBalance(client, record.id);
+    const castka = castkaEntered + prevBalance;
+    const zbyva = castka - celkem;
+    el('celkemOut').textContent = formatKc(celkem);
+    el('zbyvaOut').textContent = formatKc(zbyva);
+    const zbyvaRow = el('zbyvaRow');
+    zbyvaRow.className = 'totals-row zbyva ' + (zbyva < 0 ? 'negative' : (zbyva > 0 ? 'positive' : ''));
+
+    const noteEl = el('totalsNote');
+    let note = '';
+    let warningClass = '';
+    const prevBalanceRounded = Math.round(prevBalance);
+    if(prevBalanceRounded !== 0){
+      if(prevBalanceRounded > 0) note += 'Převod +' + formatKc(prevBalanceRounded) + ' | ';
+      else note += 'Převod ' + formatKc(prevBalanceRounded) + ' | ';
+    }
+
+    // Upozornění z novější verze: chybí částka výběru
+    if(record.castka === '' || record.castka === null || record.castka === undefined || parseNum(record.castka) === 0){
+      if(zbyva > 0 || celkem > 0){
+        note += '⚠️ Částka výběru není vyplněna – zůstatek nemusí odpovídat skutečnosti | ';
+        warningClass = 'warning-bg';
+      }
+    }
+
+    if(zbyva < 0){
+      note += formatKc(Math.abs(zbyva)) + ' použito z dalšího výběru';
+      noteEl.style.color = '';
+    } else if(zbyva > 0){
+      note += formatKc(zbyva) + ' převedeno do dalšího období';
+      noteEl.style.color = '';
+    } else {
+      noteEl.style.color = '';
+    }
+    noteEl.textContent = note;
+    noteEl.className = 'totals-note ' + warningClass;
+    el('printDate').textContent = 'Vytištěno: ' + new Date().toLocaleDateString('cs-CZ');
+    buildPrintView();
+  }
+
+  function attachFieldListeners(){
+    document.querySelectorAll('#rows input[data-field="datum"]').forEach(input => {
+      input.onchange = (e) => {
+        if(viewingArchive) return;
+        const record = getCurrentRecord();
+        if(!record) return;
+        const item = record.items.find(i => i.id === e.target.dataset.id);
+        if(!item) return;
+        item.datum = e.target.value;
+        markUnsaved();
+        sortItems(record.items);
+        renderRows();
+        renderTotals();
+        renderStats();
+        populateRecordSelect();
+      };
+    });
+    document.querySelectorAll('#rows input[data-field="nazev"], #rows input[data-field="cena"]').forEach(input => {
+      input.oninput = (e) => {
+        if(viewingArchive) return;
+        const record = getCurrentRecord();
+        if(!record) return;
+        const item = record.items.find(i => i.id === e.target.dataset.id);
+        if(!item) return;
+        item[e.target.dataset.field] = e.target.value;
+        markUnsaved();
+        renderTotals();
+        renderStats();
+        // historii jen aktualizovat, nepřestavovat celý select (ztráta focusu)
+        const client = getCurrentClient();
+        if(client) renderHistory(filteredRecordList(client));
+      };
+    });
+    document.querySelectorAll('[data-del]').forEach(btn => {
+      btn.onclick = (e) => {
+        const record = getCurrentRecord();
+        if(!record || record.locked === true || viewingArchive) return;
+        const id = e.currentTarget.dataset.del;
+        record.items = record.items.filter(i => i.id !== id);
+        markUnsaved();
+        renderRows();
+        renderTotals();
+        renderStats();
+        populateRecordSelect();
+      };
+    });
+  }
+
+  function buildPrintView(){
+    const client = getCurrentClient();
+    const record = getCurrentRecord();
+    if(!client || !record){ el('printOnly').innerHTML = ''; return; }
+    const items = record.items;
+    const numberedRows = Math.max(20, items.length);
+    const totalRows = Math.max(29, numberedRows);
+    const celkem = items.reduce((sum, it) => sum + parseNum(it.cena), 0);
+    const castkaEntered = parseNum(record.castka);
+    const prevBalance = viewingArchive ? 0 : getPreviousBalance(client, record.id);
+    const zbyva = (castkaEntered + prevBalance) - celkem;
+
+    let rowsHtml = '';
+    for(let i=0; i<totalRows; i++){
+      const item = items[i];
+      const poradi = i < numberedRows ? String(i+1) : '';
+      const datum = item ? formatDatePrint(item.datum) : '';
+      const nazev = item ? (item.nazev || '') : '';
+      const cenaVal = item && item.cena !== '' && item.cena !== undefined && item.cena !== null ? Math.round(parseNum(item.cena)) : '';
+      const poradiOut = poradi ? escapeHtml(poradi) : '&nbsp;';
+      const datumOut = datum ? escapeHtml(datum) : '&nbsp;';
+      const nazevOut = nazev ? escapeHtml(nazev) : '&nbsp;';
+      const cenaOut = cenaVal !== '' ? escapeHtml(String(cenaVal)) : '&nbsp;';
+      rowsHtml += '<tr><td>'+poradiOut+'</td><td>'+datumOut+'</td><td>'+nazevOut+'</td><td class="num">'+cenaOut+'</td></tr>';
+    }
+
+    let noteHtml = '';
+    const zbyvaRounded = Math.round(zbyva);
+    if(zbyvaRounded < 0){
+      noteHtml = '<div class="print-note">'+escapeHtml(String(Math.abs(zbyvaRounded)))+' KČ POUŽITO Z DALŠÍHO VÝBĚRU</div>';
+    } else if(zbyvaRounded > 0){
+      noteHtml = '<div class="print-note">'+escapeHtml(String(zbyvaRounded))+' KČ PŘEVEDENO DO DALŠÍHO OBDOBÍ</div>';
+    }
+
+    const prevBalanceRoundedPrint = Math.round(prevBalance);
+    const castkaEnteredRounded = Math.round(castkaEntered);
+    let castkaDisplay;
+    if(prevBalanceRoundedPrint === 0){
+      castkaDisplay = String(castkaEnteredRounded);
+    } else if(prevBalanceRoundedPrint > 0){
+      castkaDisplay = castkaEnteredRounded + ' + ' + prevBalanceRoundedPrint + ' = ' + (castkaEnteredRounded + prevBalanceRoundedPrint);
+    } else {
+      castkaDisplay = castkaEnteredRounded + ' - ' + Math.abs(prevBalanceRoundedPrint) + ' = ' + (castkaEnteredRounded + prevBalanceRoundedPrint);
+    }
+
+    el('printOnly').innerHTML =
+      '<table class="print-table"><tr><th>JMÉNO KLIENTA</th><th>ČÍSLO VÝBĚRU</th><th>ČÁSTKA</th></tr>' +
+      '<tr><td>'+escapeHtml((client.jmeno||'').toUpperCase())+'</td><td>'+escapeHtml(record.cisloVyberu||'')+'</td><td>'+escapeHtml(castkaDisplay)+'</td></tr></table>' +
+      '<table class="print-table"><tr><th>POŘADÍ</th><th>DATUM</th><th>NÁZEV ZBOŽÍ</th><th class="num">CENA</th></tr>' +
+      rowsHtml +
+      '<tr><td>CELKEM</td><td></td><td></td><td class="num">'+escapeHtml(String(Math.round(celkem)))+'</td></tr></table>' +
+      noteHtml +
+      '<div class="print-sign">Vypracoval: '+escapeHtml(record.vypracoval||'')+'</div>';
+  }
+
+  // field listeners
+  el('jmeno').oninput = (e) => {
+    if(viewingArchive) return;
+    const client = getCurrentClient();
+    if(!client) return;
+    client.jmeno = e.target.value;
+    markUnsaved();
+    renderClientList();
+    buildPrintView();
+  };
+  ['cisloVyberu','castka','vypracoval'].forEach(id => {
+    el(id).oninput = (e) => {
+      if(viewingArchive) return;
+      const record = getCurrentRecord();
+      if(!record) return;
+      record[id] = e.target.value;
+      markUnsaved();
+      if(id === 'cisloVyberu') populateRecordSelect();
+      renderTotals();
+      renderStats();
+    };
+  });
+
+  el('addRowBtn').onclick = () => {
+    if(viewingArchive) return;
+    const record = getCurrentRecord();
+    if(!record) return;
+    record.items.push(newItem());
+    markUnsaved();
+    renderRows();
+    renderTotals();
+    renderStats();
+  };
+
+  function generateKapesne(){
+    if(viewingArchive) return;
+    const record = getCurrentRecord();
+    if(!record || record.locked === true) return;
+    const amount = parseNum(el('genCastka').value);
+    const odVal = el('genOd').value;
+    const doVal = el('genDo').value;
+    if(!odVal || !doVal || !amount){
+      alert('Vyplňte částku za týden a období od–do.');
+      return;
+    }
+    let d = new Date(odVal);
+    const konec = new Date(doVal);
+    if(isNaN(d) || isNaN(konec) || d > konec){
+      alert('Zkontrolujte prosím zadané datum "Od" a "Do".');
+      return;
+    }
+    // najít první pondělí v období (UTC, aby datum sedělo bez ohledu na pásmo)
+    while(d.getUTCDay() !== 1){ d.setUTCDate(d.getUTCDate() + 1); }
+    const weeks = [];
+    while(d <= konec){
+      weeks.push({ datum: d.toISOString().slice(0,10), castka: amount });
+      d.setUTCDate(d.getUTCDate() + 7);
+    }
+    if(!weeks.length){
+      alert('V zadaném období není žádné pondělí.');
+      return;
+    }
+    // Nové týdny se PŘIČTOU k případnému už existujícímu rozpisu (podle data)
+    const existing = record.kapesneRozpis || [];
+    const merged = new Map();
+    existing.forEach(w => merged.set(w.datum, parseNum(w.castka)));
+    weeks.forEach(w => merged.set(w.datum, w.castka));
+    const combined = Array.from(merged.entries())
+      .map(([datum, castka]) => ({ datum, castka }))
+      .sort((a,b) => (a.datum||'').localeCompare(b.datum||''));
+    const celkemKapesne = combined.reduce((s,w) => s + parseNum(w.castka), 0);
+
+    // Do vyúčtování se zapíše jen JEDEN řádek KAPESNÉ s celkovou částkou
+    let kapesneItem = record.items.find(it => !it.datum && (it.nazev||'').trim().toUpperCase() === 'KAPESNÉ');
+    if(kapesneItem){
+      kapesneItem.cena = celkemKapesne;
+    } else {
+      record.items.unshift(newItem('', 'KAPESNÉ', celkemKapesne));
+    }
+    record.kapesneRozpis = combined;
+
+    sortItems(record.items);
+    markUnsaved();
+    renderRows();
+    renderTotals();
+    renderStats();
+    el('genCastka').value = '';
+    el('genOd').value = '';
+    el('genDo').value = '';
+    el('kapesneForm').style.display = 'none';
+  }
+
+  el('kapesneToggleBtn').onclick = () => {
+    const form = el('kapesneForm');
+    form.style.display = (form.style.display === 'none' || !form.style.display) ? 'flex' : 'none';
+  };
+  el('genRunBtn').onclick = generateKapesne;
+
+  el('addClientBtn').onclick = addClient;
+  el('newClientName').onkeydown = (e) => { if(e.key === 'Enter') addClient(); };
+  el('deleteClientBtn').onclick = deleteClient;
+  el('recordSelect').onchange = (e) => selectRecord(e.target.value);
+  el('newRecordBtn').onclick = newRecord;
+  el('deleteRecordBtn').onclick = deleteRecord;
+  el('yearSelect').onchange = (e) => {
+    if(viewingArchive) archiveYearFilter = e.target.value;
+    else yearFilter = e.target.value;
+    const client = getCurrentClient();
+    const list = filteredRecordList(client);
+    currentRecordId = list.length ? list[0].id : null;
+    populateRecordSelect();
+    render();
+  };
+  el('archiveYearBtn').onclick = archiveYear;
+  el('viewArchiveBtn').onclick = enterArchiveMode;
+  el('exitArchiveBtn').onclick = exitArchiveMode;
+  el('restoreFromArchiveBtn').onclick = restoreFromArchive;
+
+  el('lockBtn').onclick = () => {
+    if(viewingArchive) return;
+    const record = getCurrentRecord();
+    if(!record) return;
+    const locked = record.locked === true;
+    if(locked){
+      if(confirm('Opravdu odemknout toto vyúčtování? Budou povoleny úpravy.')){
+        record.locked = false; markUnsaved(); populateRecordSelect(); render();
+      }
+    } else {
+      if(confirm('Opravdu uzavřít vyúčtování? Po uzamčení nebude možné provádět změny.')){
+        record.locked = true; markUnsaved(); doAutoBackup(); populateRecordSelect(); render();
+      }
+    }
+  };
+
+  function exportWord(){
+    const client = getCurrentClient();
+    const record = getCurrentRecord();
+    if(!client || !record){
+      alert('Nejdřív vyberte klienta a vyúčtování.');
+      return;
+    }
+    const items = record.items || [];
+    const celkem = items.reduce((sum, it) => sum + parseNum(it.cena), 0);
+    const castkaEntered = parseNum(record.castka);
+    const prevBalance = viewingArchive ? 0 : getPreviousBalance(client, record.id);
+    const zbyva = (castkaEntered + prevBalance) - celkem;
+    const prevR = Math.round(prevBalance);
+    const castkaR = Math.round(castkaEntered);
+    let castkaDisplay;
+    if(prevR === 0) castkaDisplay = String(castkaR);
+    else if(prevR > 0) castkaDisplay = castkaR + ' + ' + prevR + ' = ' + (castkaR + prevR);
+    else castkaDisplay = castkaR + ' - ' + Math.abs(prevR) + ' = ' + (castkaR + prevR);
+
+    const minRows = Math.max(20, items.length);
+    let rows = '';
+    for(let i = 0; i < minRows; i++){
+      const it = items[i];
+      const poradi = String(i + 1);
+      const datum = it ? formatDatePrint(it.datum) : '';
+      const nazev = it ? (it.nazev || '') : '';
+      const cena = it && it.cena !== '' && it.cena != null ? String(Math.round(parseNum(it.cena))) : '';
+      rows += '<tr>' +
+        '<td style="border:1px solid #000;padding:4px 6px;width:50px;">' + escapeHtml(poradi) + '</td>' +
+        '<td style="border:1px solid #000;padding:4px 6px;width:90px;">' + escapeHtml(datum) + '</td>' +
+        '<td style="border:1px solid #000;padding:4px 6px;">' + escapeHtml(nazev) + '</td>' +
+        '<td style="border:1px solid #000;padding:4px 6px;text-align:right;width:80px;">' + escapeHtml(cena) + '</td>' +
+        '</tr>';
+    }
+
+    let note = '';
+    const zb = Math.round(zbyva);
+    if(zb < 0) note = '<p style="font-weight:bold;text-transform:uppercase;">' + escapeHtml(String(Math.abs(zb))) + ' KČ POUŽITO Z DALŠÍHO VÝBĚRU</p>';
+    else if(zb > 0) note = '<p style="font-weight:bold;text-transform:uppercase;">' + escapeHtml(String(zb)) + ' KČ PŘEVEDENO DO DALŠÍHO OBDOBÍ</p>';
+
+    const safeName = (client.jmeno || 'klient').replace(/[\\/:*?"<>|]/g, '_');
+    const safeCislo = (record.cisloVyberu || 'bez_cisla').replace(/[\\/:*?"<>|]/g, '_');
+
+    const html = '<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" ' +
+      'xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
+      '<head><meta charset="UTF-8"><title>Vyúčtování</title>' +
+      '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->' +
+      '<style>' +
+      'body{font-family:Arial,sans-serif;font-size:12pt;}' +
+      'table{border-collapse:collapse;width:100%;margin-bottom:14px;}' +
+      'th,td{border:1px solid #000;padding:4px 6px;}' +
+      'th{background:#f0f0f0;text-transform:uppercase;font-size:10pt;}' +
+      'h1{font-size:16pt;text-transform:uppercase;}' +
+      '</style></head><body>' +
+      '<h1>Vyúčtování</h1>' +
+      '<p>CSS Tloskov</p>' +
+      '<table><tr><th>Jméno klienta</th><th>Číslo výběru</th><th>Částka</th></tr>' +
+      '<tr><td>' + escapeHtml((client.jmeno || '').toUpperCase()) + '</td>' +
+      '<td>' + escapeHtml(record.cisloVyberu || '') + '</td>' +
+      '<td>' + escapeHtml(castkaDisplay) + '</td></tr></table>' +
+      '<table><tr><th>Pořadí</th><th>Datum</th><th>Název zboží</th><th>Cena</th></tr>' +
+      rows +
+      '<tr><td colspan="3" style="font-weight:bold;">CELKEM</td>' +
+      '<td style="text-align:right;font-weight:bold;">' + escapeHtml(String(Math.round(celkem))) + '</td></tr>' +
+      '</table>' +
+      note +
+      '<p>Vypracoval: ' + escapeHtml(record.vypracoval || '') + '</p>' +
+      '<p style="color:#666;font-size:10pt;">Exportováno: ' + escapeHtml(new Date().toLocaleString('cs-CZ')) + '</p>' +
+      '</body></html>';
+
+    const blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'vyuctovani_' + safeName + '_' + safeCislo + '.doc';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    el('saveStatus').textContent = 'Exportováno do Wordu';
+  }
+
+  function printKapesneSeparately(){
+    const client = getCurrentClient();
+    const record = getCurrentRecord();
+    if(!client || !record){ alert('Nejdřív vyberte klienta a vyúčtování.'); return; }
+    if(!record.kapesneRozpis || !record.kapesneRozpis.length){
+      alert('Pro toto vyúčtování zatím nebylo vygenerováno žádné kapesné.');
+      return;
+    }
+    let rows = '';
+    let celkem = 0;
+    record.kapesneRozpis.forEach(w => {
+      const c = parseNum(w.castka);
+      celkem += c;
+      rows += '<tr><td>'+escapeHtml(formatDatePrint(w.datum))+'</td><td>'+escapeHtml(String(Math.round(c)))+' Kč</td></tr>';
+    });
+    const html = '<!DOCTYPE html><html lang="cs"><head><meta charset="UTF-8">' +
+      '<title>Evidence kapesného klienta</title><style>' +
+      'body{font-family:Arial,sans-serif;max-width:900px;margin:20px auto;padding:20px}' +
+      'h1{text-align:center}' +
+      'label{font-weight:bold}' +
+      'table{width:100%;border-collapse:collapse;margin-top:20px}' +
+      'th,td{border:1px solid #000;padding:8px;text-align:center}' +
+      'th{background:#eee}' +
+      '#soucet{text-align:right;font-weight:bold;font-size:20px;margin-top:15px}' +
+      '.podpisy{display:flex;justify-content:space-between;margin-top:70px}' +
+      '.cara{border-top:1px solid #000;margin-top:50px;margin-bottom:10px;width:200px}' +
+      '</style></head><body>' +
+      '<h1>Evidence kapesného klienta</h1>' +
+      '<label>Jméno klienta:</label> ' + escapeHtml(client.jmeno || '') +
+      '<table><thead><tr><th>Datum</th><th>Částka</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div id="soucet">Celkem: ' + Math.round(celkem) + ' Kč</div>' +
+      '<div class="podpisy">' +
+      '<div><div class="cara"></div>Podpis klienta</div>' +
+      '<div><div class="cara"></div>Podpis pracovníka</div>' +
+      '</div></body></html>';
+    const win = window.open('', '_blank');
+    if(!win){
+      alert('Prohlížeč zablokoval otevření nového okna pro tisk. Povolte vyskakovací okna pro tuto stránku.');
+      return;
+    }
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { try{ win.print(); }catch(e){} }, 250);
+  }
+
+  el('printBtn').onclick = () => window.print();
+  el('printKapesneBtn').onclick = printKapesneSeparately;
+  el('wordBtn').onclick = exportWord;
+  el('backupBtn').onclick = downloadBackup;
+  el('restoreLocalBtn').onclick = restoreFromLocal;
+  el('dismissRestoreBtn').onclick = () => { el('restoreBanner').style.display = 'none'; };
+
+  function migrateOldFormat(loaded){
+    if(loaded && loaded.clients) {
+      loaded.clients.forEach(c => {
+        if(!c.archive) c.archive = {};
+        if(!c.records) c.records = [];
+      });
+      return loaded;
+    }
+    if(loaded && (loaded.jmeno !== undefined || loaded.items !== undefined)){
+      const rec = {
+        id: nextId('r'),
+        cisloVyberu: loaded.cisloVyberu || '',
+        castka: loaded.castka || '',
+        vypracoval: loaded.vypracoval || '',
+        items: Array.isArray(loaded.items) ? loaded.items.map(it => ({ id: nextId('i'), datum: it.datum||'', nazev: it.nazev||'', cena: it.cena===undefined?'':it.cena })) : [],
+        locked: false,
+        createdAt: new Date().toISOString()
+      };
+      return { clients: [{ id: nextId('c'), jmeno: loaded.jmeno || 'Klient', records: [rec], archive: {} }] };
+    }
+    return { clients: [] };
+  }
+
+  function reindexIds(loadedDb){
+    loadedDb.clients.forEach(c => {
+      c.id = c.id || nextId('c');
+      if(!c.archive) c.archive = {};
+      (c.records || []).forEach(r => {
+        r.id = r.id || nextId('r');
+        if(!r.createdAt) r.createdAt = new Date().toISOString();
+        (r.items || []).forEach(it => { it.id = it.id || nextId('i'); });
+      });
+      Object.keys(c.archive).forEach(y => {
+        (c.archive[y] || []).forEach(r => {
+          r.id = r.id || nextId('r');
+          if(!r.createdAt) r.createdAt = y + '-01-01T00:00:00.000Z';
+          (r.items || []).forEach(it => { it.id = it.id || nextId('i'); });
+        });
+      });
+    });
+    return loadedDb;
+  }
+
+  function processLoadedData(loaded, fileName){
+    loaded = migrateOldFormat(loaded);
+    loaded = reindexIds(loaded);
+    syncIdCounter(loaded);
+    db = loaded;
+    viewingArchive = false;
+    archiveYearFilter = '';
+    yearFilter = '';
+    currentClientId = db.clients.length ? db.clients[0].id : null;
+    const client = getCurrentClient();
+    currentRecordId = (client && client.records.length) ? client.records[client.records.length-1].id : null;
+    renderClientList();
+    populateRecordSelect();
+    updateVisibility();
+    render();
+    hasUnsavedChanges = false;
+    el('saveStatus').textContent = 'Načteno: ' + fileName;
+    el('restoreBanner').style.display = 'none';
+    doAutoBackup();
+  }
+
+  el('openDbBtn').onclick = async () => {
+    if ('showOpenFilePicker' in window) {
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          types: [{ description: 'JSON soubory', accept: { 'application/json': ['.json'] } }]
+        });
+        fileHandle = handle;
+        const file = await fileHandle.getFile();
+        processLoadedData(JSON.parse(await file.text()), file.name);
+      } catch (err) {
+        if (err.name !== 'AbortError') console.error(err);
+      }
+    } else {
+      el('fileInput').click();
+    }
+  };
+  el('fileInput').onchange = (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if(!file) return;
+    fileHandle = null;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try { processLoadedData(JSON.parse(ev.target.result), file.name); }
+      catch(err){ el('saveStatus').textContent = 'Soubor se nepodařilo přečíst.'; }
+    };
+    reader.readAsText(file);
+  };
+
+  async function saveDirect() {
+    const data = JSON.stringify(db, null, 2);
+    if (fileHandle) {
+      try {
+        const writable = await fileHandle.createWritable();
+        await writable.write(data);
+        await writable.close();
+        hasUnsavedChanges = false;
+        el('saveStatus').textContent = 'Uloženo do ' + fileHandle.name;
+        doAutoBackup();
+        return true;
+      } catch (err) { console.error(err); }
+    }
+    return false;
+  }
+  async function saveAsNew() {
+    const data = JSON.stringify(db, null, 2);
+    if ('showSaveFilePicker' in window) {
+      try {
+        fileHandle = await window.showSaveFilePicker({
+          suggestedName: 'vyuctovani_databaze.json',
+          types: [{ description: 'JSON soubory', accept: { 'application/json': ['.json'] } }]
+        });
+        const writable = await fileHandle.createWritable();
+        await writable.write(data);
+        await writable.close();
+        hasUnsavedChanges = false;
+        el('saveStatus').textContent = 'Uloženo jako ' + fileHandle.name;
+        doAutoBackup();
+      } catch (err) {
+        if (err.name !== 'AbortError') console.error(err);
+      }
+    } else {
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'vyuctovani_databaze.json';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      hasUnsavedChanges = false;
+      el('saveStatus').textContent = 'Staženo jako vyuctovani_databaze.json';
+      doAutoBackup();
+    }
+  }
+  el('saveDbBtn').onclick = async () => { if(!(await saveDirect())) await saveAsNew(); };
+  el('saveAsDbBtn').onclick = saveAsNew;
+
+  // ---------- Mobile panel drawers ----------
+  function closeMobilePanels(){
+    el('leftPanel').classList.remove('mobile-show');
+    el('rightPanel').classList.remove('mobile-show');
+    el('mobileBackdrop').classList.remove('visible');
+    const lb = el('mobileLeftBtn');
+    const rb = el('mobileRightBtn');
+    if(lb) lb.classList.remove('active');
+    if(rb) rb.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  function openMobilePanel(side){
+    closeMobilePanels();
+    const panel = side === 'left' ? el('leftPanel') : el('rightPanel');
+    const btn = side === 'left' ? el('mobileLeftBtn') : el('mobileRightBtn');
+    panel.classList.add('mobile-show');
+    el('mobileBackdrop').classList.add('visible');
+    if(btn) btn.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function toggleMobilePanel(side){
+    const panel = side === 'left' ? el('leftPanel') : el('rightPanel');
+    if(panel.classList.contains('mobile-show')) closeMobilePanels();
+    else openMobilePanel(side);
+  }
+  el('mobileLeftBtn').onclick = () => toggleMobilePanel('left');
+  el('mobileRightBtn').onclick = () => toggleMobilePanel('right');
+  el('closeLeftPanel').onclick = closeMobilePanels;
+  el('closeRightPanel').onclick = closeMobilePanels;
+  el('mobileBackdrop').onclick = closeMobilePanels;
+  // Po výběru klienta na mobilu zavřít levý panel
+  const _origSelectClient = selectClient;
+  selectClient = function(id){
+    _origSelectClient(id);
+    if(window.matchMedia('(max-width:900px)').matches) closeMobilePanels();
+  };
+  window.addEventListener('resize', () => {
+    if(window.innerWidth > 900) closeMobilePanels();
+  });
+
+  window.addEventListener('beforeunload', (e) => {
+    if(hasUnsavedChanges){
+      doAutoBackup();
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
+  renderClientList();
+  updateVisibility();
+  render();
+  checkLocalBackupOnStart();
+})();
+</script>
+</body>
+</html>
